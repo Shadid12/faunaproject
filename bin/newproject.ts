@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import 'source-map-support/register';
 import * as cdk from 'aws-cdk-lib';
-import { NewprojectStack } from '../lib/newproject-stack';
+import { NewprojectStack } from '../lib/faunaproject-stack';
 
 const app = new cdk.App();
 new NewprojectStack(app, 'NewprojectStack', {
