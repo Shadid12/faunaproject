@@ -56,6 +56,17 @@ export class NewprojectStack extends cdk.Stack {
       },
     });
 
+    // Define the getCustomerCart Lambda function
+    const getCustomerCartLambda = new lambda.Function(this, 'GetCustomerCartFunction', {
+      functionName: 'GetCustomerCart',
+      runtime: lambda.Runtime.NODEJS_20_X,
+      code: lambda.Code.fromAsset('lambda'), // Assuming your handler is in the 'lambda' directory
+      handler: 'getCustomerCart.handler', // File name is getCustomerCart.ts and function name is handler
+      environment: {
+        FAUNA_SECRET: process.env.FAUNA_SECRET || '', // Add necessary environment variables
+      },
+    });
+
     // Create API Gateway
     const api = new apigateway.RestApi(this, 'CrudApi', {
       restApiName: 'Fauna Workshop Service',
@@ -81,6 +92,12 @@ export class NewprojectStack extends cdk.Stack {
     const getProductsByPriceIntegration = new apigateway.LambdaIntegration(getProductsByPriceLambda);
     byPrice.addMethod('GET', getProductsByPriceIntegration);
     
+    // GET /customers/{id}/cart - Get customer's cart
+    const customers = api.root.addResource('customers');
+    const customer = customers.addResource('{id}');
+    const cart = customer.addResource('cart');
+    const getCustomerCartIntegration = new apigateway.LambdaIntegration(getCustomerCartLambda);
+    cart.addMethod('GET', getCustomerCartIntegration);
 
     /** END */
   }

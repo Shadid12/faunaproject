@@ -1,0 +1,17 @@
+collection OrderItem {
+  order: Ref<Order>
+  product: Ref<Product>
+  quantity: Int
+
+  unique [.order, .product]
+  check positiveQuantity (orderItem => orderItem.quantity > 0)
+
+  index byOrder {
+    terms [.order]
+    values [.product, .quantity]
+  }
+
+  index byOrderAndProduct {
+    terms [.order, .product]
+  }
+}

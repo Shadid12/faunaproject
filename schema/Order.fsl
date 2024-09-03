@@ -1,0 +1,31 @@
+collection Order {
+  customer: Ref<Customer>
+  status: "cart" | "processing" | "shipped" | "delivered"
+  createdAt: Time
+
+  compute items: Set<OrderItem> = (order => OrderItem.byOrder(order))
+  compute total: Number = (order => order.items.fold(0, (sum, orderItem) => {
+    let orderItem: Any = orderItem
+    if (orderItem.product != null) {
+      sum + orderItem.product.price * orderItem.quantity
+    } else {
+      sum
+    }
+  }))
+  payment: { *: Any }
+
+  check oneOrderInCart (order => {
+    Order.byCustomerAndStatus(order.customer, "cart").count() <= 1
+  })
+
+  // Define an index to get all orders for a customer. Orders will be sorted by
+  // createdAt in descending order.
+  index byCustomer {
+    terms [.customer]
+    values [desc(.createdAt), .status]
+  }
+
+  index byCustomerAndStatus {
+    terms [.customer, .status]
+  }
+}
