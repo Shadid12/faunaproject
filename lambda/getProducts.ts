@@ -3,6 +3,16 @@ import { faunaClient } from './fauna-client'; // Adjust this import based on you
 import { fql, Page } from 'fauna';
 import { Product } from './models/products.model'; // Adjust this import based on your project's structure
 
+/**
+ * Get a page of products. If a category query parameter is provided, return only products in that category.
+ * If no category query parameter is provided, return all products. The results are paginated with a default
+ * page size of 10. If a nextToken is provided, return the next page of products corresponding to that token.
+ * @route {GET} /products
+ * @queryparam category
+ * @queryparam nextToken
+ * @queryparam pageSize
+ * @returns { results: Product[], nextToken: string }
+ */
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   const queryParams = event.queryStringParameters || {};
   const { category, nextToken = undefined, pageSize = '10' } = queryParams;

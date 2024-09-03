@@ -24,16 +24,31 @@ export class NewprojectStack extends cdk.Stack {
       },
     });
 
+    // Define the createProduct Lambda function
+    const createProductLambda = new lambda.Function(this, 'CreateProductFunction', {
+      functionName: 'CreateProduct',
+      runtime: lambda.Runtime.NODEJS_20_X,
+      code: lambda.Code.fromAsset('lambda'), // Assuming your handler is in the 'lambda' directory
+      handler: 'createProduct.handler', // File name is createProduct.ts and function name is handler
+      environment: {
+        FAUNA_SECRET: process.env.FAUNA_SECRET || '', // Add necessary environment variables
+      },
+    });
+
     // Create API Gateway
     const api = new apigateway.RestApi(this, 'CrudApi', {
       restApiName: 'CRUD Service',
       description: 'This service handles CRUD operations.',
     });
 
-    // /products route for GET
+    // GET /products - Get all products
     const products = api.root.addResource('products');
     const getProductsIntegration = new apigateway.LambdaIntegration(getProductsLambda);
     products.addMethod('GET', getProductsIntegration);
+
+    // /products route for POST
+    const createProductIntegration = new apigateway.LambdaIntegration(createProductLambda);
+    products.addMethod('POST', createProductIntegration);
 
     /** END */
 
@@ -60,9 +75,6 @@ export class NewprojectStack extends cdk.Stack {
     const updateIntegration = new apigateway.LambdaIntegration(updateLambda);
     item.addMethod('PUT', updateIntegration);
 
-    // DELETE /items/{id} - Delete an item
-    const deleteIntegration = new apigateway.LambdaIntegration(deleteLambda);
-    item.addMethod('DELETE', deleteIntegration);
   }
 
   private createCrudLambda(name: string, handler: string): lambda.Function {
