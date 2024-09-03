@@ -10,7 +10,6 @@ export class NewprojectStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-
     /*** Endpoints simmilar to JS sample app */
 
     // Define the getProducts Lambda function
@@ -35,9 +34,20 @@ export class NewprojectStack extends cdk.Stack {
       },
     });
 
+    // Define the updateProduct Lambda function
+    const updateProductLambda = new lambda.Function(this, 'UpdateProductFunction', {
+      functionName: 'UpdateProduct',
+      runtime: lambda.Runtime.NODEJS_20_X,
+      code: lambda.Code.fromAsset('lambda'), // Assuming your handler is in the 'lambda' directory
+      handler: 'updateProduct.handler', // File name is updateProduct.ts and function name is handler
+      environment: {
+        FAUNA_SECRET: process.env.FAUNA_SECRET || '', // Add necessary environment variables
+      },
+    });
+
     // Create API Gateway
     const api = new apigateway.RestApi(this, 'CrudApi', {
-      restApiName: 'CRUD Service',
+      restApiName: 'Fauna Workshop Service',
       description: 'This service handles CRUD operations.',
     });
 
@@ -46,44 +56,16 @@ export class NewprojectStack extends cdk.Stack {
     const getProductsIntegration = new apigateway.LambdaIntegration(getProductsLambda);
     products.addMethod('GET', getProductsIntegration);
 
-    // /products route for POST
+    // POST /products - Create a new product
     const createProductIntegration = new apigateway.LambdaIntegration(createProductLambda);
     products.addMethod('POST', createProductIntegration);
 
+    // PATCH /products/{id} route for PATCH
+    const product = products.addResource('{id}');
+    const updateProductIntegration = new apigateway.LambdaIntegration(updateProductLambda);
+    product.addMethod('PATCH', updateProductIntegration);
+
     /** END */
-
-    // Create Lambda functions for each CRUD operation
-    const createLambda = this.createCrudLambda('CreateItem', 'create.handler');
-    const readLambda = this.createCrudLambda('ReadItem', 'read.handler');
-    const updateLambda = this.createCrudLambda('UpdateItem', 'update.handler');
-    const deleteLambda = this.createCrudLambda('DeleteItem', 'delete.handler');
-
-
-    // Integrate Lambda functions with API Gateway
-    const items = api.root.addResource('items');
-
-    // POST /items - Create an item
-    const createIntegration = new apigateway.LambdaIntegration(createLambda);
-    items.addMethod('POST', createIntegration);
-
-    // GET /items/{id} - Read an item
-    const item = items.addResource('{id}');
-    const readIntegration = new apigateway.LambdaIntegration(readLambda);
-    item.addMethod('GET', readIntegration);
-
-    // PUT /items/{id} - Update an item
-    const updateIntegration = new apigateway.LambdaIntegration(updateLambda);
-    item.addMethod('PUT', updateIntegration);
-
-  }
-
-  private createCrudLambda(name: string, handler: string): lambda.Function {
-    return new lambda.Function(this, `${name}Function`, {
-      functionName: name,
-      runtime: lambda.Runtime.NODEJS_20_X,
-      code: lambda.Code.fromAsset('lambda'),
-      handler: handler,
-    });
   }
 }
 
