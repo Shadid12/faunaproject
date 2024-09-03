@@ -67,6 +67,17 @@ export class NewprojectStack extends cdk.Stack {
       },
     });
 
+    // Define the createOrUpdateCart Lambda function
+    const createOrUpdateCartLambda = new lambda.Function(this, 'CreateOrUpdateCartFunction', {
+      functionName: 'CreateOrUpdateCart',
+      runtime: lambda.Runtime.NODEJS_20_X,
+      code: lambda.Code.fromAsset('lambda'), // Assuming your handler is in the 'lambda' directory
+      handler: 'createOrUpdateCart.handler', // File name is createOrUpdateCart.ts and function name is handler
+      environment: {
+        FAUNA_SECRET: process.env.FAUNA_SECRET || '', // Add necessary environment variables
+      },
+    });
+
     // Create API Gateway
     const api = new apigateway.RestApi(this, 'CrudApi', {
       restApiName: 'Fauna Workshop Service',
@@ -98,6 +109,10 @@ export class NewprojectStack extends cdk.Stack {
     const cart = customer.addResource('cart');
     const getCustomerCartIntegration = new apigateway.LambdaIntegration(getCustomerCartLambda);
     cart.addMethod('GET', getCustomerCartIntegration);
+
+    // /customers/{id}/cart route for POST
+    const createOrUpdateCartIntegration = new apigateway.LambdaIntegration(createOrUpdateCartLambda);
+    cart.addMethod('POST', createOrUpdateCartIntegration);
 
     /** END */
   }
