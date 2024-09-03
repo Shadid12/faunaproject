@@ -45,6 +45,17 @@ export class NewprojectStack extends cdk.Stack {
       },
     });
 
+    // Define the getProductsByPrice Lambda function
+    const getProductsByPriceLambda = new lambda.Function(this, 'GetProductsByPriceFunction', {
+      functionName: 'GetProductsByPrice',
+      runtime: lambda.Runtime.NODEJS_20_X,
+      code: lambda.Code.fromAsset('lambda'), // Assuming your handler is in the 'lambda' directory
+      handler: 'getProductsByPrice.handler', // File name is getProductsByPrice.ts and function name is handler
+      environment: {
+        FAUNA_SECRET: process.env.FAUNA_SECRET || '', // Add necessary environment variables
+      },
+    });
+
     // Create API Gateway
     const api = new apigateway.RestApi(this, 'CrudApi', {
       restApiName: 'Fauna Workshop Service',
@@ -64,6 +75,12 @@ export class NewprojectStack extends cdk.Stack {
     const product = products.addResource('{id}');
     const updateProductIntegration = new apigateway.LambdaIntegration(updateProductLambda);
     product.addMethod('PATCH', updateProductIntegration);
+
+    // GET /products/by-price - Get products by price range
+    const byPrice = products.addResource('by-price');
+    const getProductsByPriceIntegration = new apigateway.LambdaIntegration(getProductsByPriceLambda);
+    byPrice.addMethod('GET', getProductsByPriceIntegration);
+    
 
     /** END */
   }
